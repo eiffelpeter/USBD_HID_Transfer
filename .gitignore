@@ -1,0 +1,11 @@
+# Keil
+obj/
+lst/
+RTE/
+*.uvguix.*
+*.uvgui.*
+
+
+*.ini
+*.bak
+*.vtg
