@@ -137,7 +137,7 @@
             <DriverSelection>4106</DriverSelection>
           </Flash1>
           <bUseTDR>1</bUseTDR>
-          <Flash2>Bin\Nu_Link.dll</Flash2>
+          <Flash2>BIN\UL2CM3.DLL</Flash2>
           <Flash3></Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\;..\..\..\..\Library\CMSIS\Include;..\..\..\..\Library\Device\Nuvoton\M031\Include;..\..\..\..\Library\StdDriver\inc</IncludePath>
+              <IncludePath>.\;..\M031BSP\Library\CMSIS\Include;..\M031BSP\Library\Device\Nuvoton\M031\Include;..\M031BSP\Library\StdDriver\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -385,12 +385,12 @@
             <File>
               <FileName>system_M031Series.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\Library\Device\Nuvoton\M031\Source\system_M031Series.c</FilePath>
+              <FilePath>..\M031BSP\Library\Device\Nuvoton\M031\Source\system_M031Series.c</FilePath>
             </File>
             <File>
               <FileName>startup_M031Series.s</FileName>
               <FileType>2</FileType>
-              <FilePath>..\..\..\..\Library\Device\Nuvoton\M031\Source\ARM\startup_M031Series.s</FilePath>
+              <FilePath>..\M031BSP\Library\Device\Nuvoton\M031\Source\ARM\startup_M031Series.s</FilePath>
             </File>
           </Files>
         </Group>
@@ -428,39 +428,39 @@
           <GroupName>Library</GroupName>
           <Files>
             <File>
-              <FileName>clk.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\..\Library\StdDriver\src\clk.c</FilePath>
-            </File>
-            <File>
               <FileName>retarget.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\Library\StdDriver\src\retarget.c</FilePath>
+              <FilePath>..\M031BSP\Library\StdDriver\src\retarget.c</FilePath>
             </File>
             <File>
               <FileName>usbd.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\Library\StdDriver\src\usbd.c</FilePath>
+              <FilePath>..\M031BSP\Library\StdDriver\src\usbd.c</FilePath>
             </File>
             <File>
               <FileName>sys.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\Library\StdDriver\src\sys.c</FilePath>
+              <FilePath>..\M031BSP\Library\StdDriver\src\sys.c</FilePath>
             </File>
             <File>
               <FileName>uart.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\Library\StdDriver\src\uart.c</FilePath>
+              <FilePath>..\M031BSP\Library\StdDriver\src\uart.c</FilePath>
             </File>
             <File>
               <FileName>pwm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\Library\StdDriver\src\pwm.c</FilePath>
+              <FilePath>..\M031BSP\Library\StdDriver\src\pwm.c</FilePath>
             </File>
             <File>
               <FileName>timer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\..\Library\StdDriver\src\timer.c</FilePath>
+              <FilePath>..\M031BSP\Library\StdDriver\src\timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>clk.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\M031BSP\Library\StdDriver\src\clk.c</FilePath>
             </File>
           </Files>
         </Group>
