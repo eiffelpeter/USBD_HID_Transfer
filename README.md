@@ -18,4 +18,4 @@ Open `USBD_HID_Transfer.uvprojx` by Keil.
 Open `HIDTransferTest.sln` by visual studio.
 
 # Demo 
-[Video](https://drive.google.com/file/d/13615Q7CeB1TMKUCQqMDKom04Chpnj5Rs/view?usp=share_link)
+[![IMAGE ALT TEXT HERE](./doc/video_thumb.png)](https://drive.google.com/file/d/13615Q7CeB1TMKUCQqMDKom04Chpnj5Rs/view?usp=share_link)
