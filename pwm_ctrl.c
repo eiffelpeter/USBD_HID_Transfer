@@ -5,7 +5,7 @@
  * $Date: $
  * @brief    PWM counter output waveform.
  * @note
- * Copyright (C) 2018 Ubiquiti network. All rights reserved.
+ * Copyright (C) All rights reserved.
  ******************************************************************************/
 #include <stdio.h>
 #include "NuMicro.h"
