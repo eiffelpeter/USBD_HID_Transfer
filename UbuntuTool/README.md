@@ -5,7 +5,7 @@
 # Make
 `gcc hid_led.c -o hid_led -lhidapi-libusb`
 
-# execute
+# Execute on Ubuntu 20.04
 `sudo ./hid_led x`
 
 ```
