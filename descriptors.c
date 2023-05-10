@@ -17,29 +17,55 @@
 uint8_t HID_DeviceReportDescriptor[] =
 {
 #if 0 // peter generate by dt.exe for busy led indicator 
-	/* LED usage for the boot protocol interface */  
-    0x06, 0x00, 0xff,              // USAGE_PAGE (Generic Desktop)
+    0x06, 0x00, 0xff,              // USAGE_PAGE (Vendor Defined Page)
     0x09, 0x02,                    // USAGE (Vendor Usage 2)
     0xa1, 0x01,                    // COLLECTION (Application)
     0x05, 0x08,                    //   USAGE_PAGE (LEDs)
     0x09, 0x4b,                    //   USAGE (Generic Indicator)
     0xa1, 0x02,                    //   COLLECTION (Logical)
+
+    // output report: 3-bit LED mode
     0x05, 0x08,                    //     USAGE_PAGE (LEDs)
+    0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
+    0x25, 0x01,                    //     LOGICAL_MAXIMUM (1)
     0x09, 0x3d,                    //     USAGE (Indicator On)
     0x09, 0x3e,                    //     USAGE (Indicator Flash)
     0x09, 0x3f,                    //     USAGE (Indicator Slow Blink)
     0x09, 0x40,                    //     USAGE (Indicator Fast Blink)
     0x09, 0x41,                    //     USAGE (Indicator Off)
-    0x06, 0x00, 0xff,              //     USAGE_PAGE (Generic Desktop)
-    0x09, 0x00,                    //     USAGE (Undefined)
+    0x95, 0x03,                    //     REPORT_COUNT (3)
+    0x75, 0x01,                    //     REPORT_SIZE (1)
+    0x91, 0x02,                    //     OUTPUT (Data)
+
+    // output report: 5-bit padding
+    0x95, 0x01,                    //     REPORT_COUNT (1)
+    0x75, 0x05,                    //     REPORT_SIZE (5)
+    0x91, 0x01,                    //     OUTPUT (Constant)
+
+    // output report: 16-bit PWM ××3
+    0x06, 0x00, 0xff,              //     USAGE_PAGE (Vendor Defined Page)
+    0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
+    0x27, 0xff, 0xff, 0x00,0x00,   //     LOGICAL_MAXIMUM (65535)
     0x09, 0x01,                    //     USAGE (Vendor Usage 1)
     0x09, 0x02,                    //     USAGE (Vendor Usage 2)
+    0x09, 0x03,                    //     USAGE (Vendor Usage 3)
+    0x95, 0x03,                    //     REPORT_COUNT (3)
+    0x75, 0x10,                    //     REPORT_SIZE (16)
+    0x91, 0x02,                    //     OUTPUT (Data)
+
+    // output report: 8-bit LED duration ××5 (logical 1..255, physical 50..12,750ms)
     0x05, 0x08,                    //     USAGE_PAGE (LEDs)
+    0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
+    0x26, 0xff, 0x00,              //     LOGICAL_MAXIMUM (255)
     0x09, 0x42,                    //     USAGE (Flash On Time)
     0x09, 0x43,                    //     USAGE (Slow Blink On Time)
     0x09, 0x44,                    //     USAGE (Slow Blink Off Time)
     0x09, 0x45,                    //     USAGE (Fast Blink On Time)
     0x09, 0x46,                    //     USAGE (Fast Blink Off Time)
+    0x95, 0x05,                    //     REPORT_COUNT (5)
+    0x75, 0x08,                    //     REPORT_SIZE (8)
+    0x91, 0x02,                    //     OUTPUT (Data,Var,Abs)
+
     0xc0,                          //   END_COLLECTION
     0xc0                           // END_COLLECTION
 #else
