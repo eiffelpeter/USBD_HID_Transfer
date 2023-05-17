@@ -3,38 +3,16 @@
 /* Copyright (c) 2010 Nuvoton Technology Corp. All rights reserved.                                        */
 /*                                                                                                         */
 /*---------------------------------------------------------------------------------------------------------*/
-
 #include "stdafx.h"
 #include "HIDTransferTest.h"
 #include "HID.hpp"
 
 #ifdef _DEBUG
-#define new DEBUG_NEW
+    #define new DEBUG_NEW
 #endif
 
 #define USB_VID         0x1234  /* Vendor ID */
 #define USB_PID         0x5678  /* Product ID */
-
-#define HID_CMD_SIGNATURE   0x43444948
-
-/* HID Transfer Commands */
-#define HID_CMD_LED_ON          0x3D
-#define HID_CMD_LED_OFF         0x41
-#define HID_CMD_LED_FLASH       0x3E
-#define HID_CMD_LED_SLOW_BLINK  0x3F
-#define HID_CMD_LED_BREATH      0x42
-#define HID_CMD_LED_PWM_DUTY    0x43
-
-#define HID_CMD_NONE     0x00
-#define HID_CMD_ERASE    0x71
-#define HID_CMD_READ     0xD2
-#define HID_CMD_WRITE    0xC3
-#define HID_CMD_TEST     0xB4
-
-
-#define PAGE_SIZE       2048/*256*/
-#define SECTOR_SIZE     4096
-#define HID_PACKET_SIZE 64
 
 
 #define USB_TIME_OUT    100
@@ -74,19 +52,35 @@ int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 #pragma pack(push)  /* push current alignment to stack */
 #pragma pack(1)     /* set alignment to 1 byte boundary */
 
-typedef struct
+typedef enum LedMode_e
 {
-    unsigned char cmd;
-    unsigned char len;
-    unsigned int arg1;
-    unsigned int arg2;
-    unsigned int signature;
-    unsigned int checksum;
-} CMD_T;
+    LED_DO_NOT_CHANGE,
+    LED_ON,
+    LED_FLASH,
+    LED_SLOW_BLINK,
+    LED_FAST_BLINK,
+    LED_OFF,
+    LED_BREATH,
+    LED_UPDATE_PARAMETER
+} LedMode;
+
+typedef struct BusyIndicatorDef_t
+{
+    unsigned char mode;
+    unsigned char red_pwm_l;
+    unsigned char red_pwm_h;
+    unsigned char green_pwm_l;
+    unsigned char green_pwm_h;
+    unsigned char blue_pwm_l;
+    unsigned char blue_pwm_h;
+    unsigned char flash_on_time;
+    unsigned char slow_blink_on_time;
+    unsigned char slow_blink_off_time;
+    unsigned char fast_blink_on_time;
+    unsigned char fast_blink_off_time;
+} BusyIndicator_t;
 
 #pragma pack(pop)   /* restore original alignment from stack */
-
-
 
 unsigned int CalCheckSum(unsigned char *buf, unsigned int size)
 {
@@ -104,216 +98,14 @@ unsigned int CalCheckSum(unsigned char *buf, unsigned int size)
 
 }
 
-/*
-    This function is used to read data through USB HID.
-
-    pReadBuf - [in ] The read buffer to store the data from USB HID. User must make sure its size is enough.
-    startPage- [out] The start page to read. The page size should be dependent on SPI Flash.
-    pages    - [out] The number of pages to read.
-
-    return value is the total read bytes.
-*/
-int ReadPages(unsigned char *pReadBuf, unsigned int startPage, unsigned int pages)
+int SendLedCmd(unsigned char command, unsigned char value)
 {
     CHidCmd io;
-    CMD_T cmd;
-    unsigned long length;
-    BOOL bRet;
-    unsigned long readBytes;
-    bool isDeviceOpened;
-
-    readBytes = 0;
-    isDeviceOpened = 0;
-    if(!io.OpenDevice(USB_VID, USB_PID))
-    {
-        printf("Can't Open HID Device\n");
-        goto lexit;
-    }
-    else
-    {
-        isDeviceOpened = TRUE;
-        printf("USB HID Device VID[%04x] PID[%04x] Open Success.\n", USB_VID, USB_PID);
-        printf(">>> Read pages: %d - %d\n", startPage, startPage + pages - 1);
-
-        cmd.cmd = HID_CMD_READ;
-        cmd.len = sizeof(cmd) - 4; /* Not include checksum */
-        cmd.arg1 = startPage;
-        cmd.arg2 = pages;
-        cmd.signature = HID_CMD_SIGNATURE;
-        cmd.checksum = CalCheckSum((unsigned char *)&cmd, cmd.len);
-
-        bRet = io.WriteFile((unsigned char *)&cmd, sizeof(cmd), &length, USB_TIME_OUT);
-        if(!bRet)
-        {
-            printf("ERROR: Send read command error!\n");
-            goto lexit;
-        }
-
-        while(1)
-        {
-            if(readBytes >= cmd.arg2 * PAGE_SIZE)
-            {
-                break;
-            }
-
-            bRet = io.ReadFile(pReadBuf + readBytes, 256, &length, USB_TIME_OUT);
-            if(!bRet)
-            {
-                printf("ERROR: Read fail!\n");
-                goto lexit;
-            }
-            readBytes += length;
-        }
-
-    }
-
-
-lexit:
-
-    if(isDeviceOpened)
-        io.CloseDevice();
-
-    return readBytes;
-}
-
-/*
-    This function is used to erase sectors of target device.
-
-    startSector- [out] The start sector to erase. The sector size should be dependent on SPI Flash.
-    sectors    - [out] The number of sectors to erase.
-
-    return value is the total erased sec.
-*/
-int EraseSectors(unsigned int startSector, unsigned int sectors)
-{
-    CHidCmd io;
-    CMD_T cmd;
     unsigned long length;
     BOOL bRet;
     bool isDeviceOpened;
-    unsigned int eraseCnt;
-
-    eraseCnt = 0;
-    isDeviceOpened = 0;
-    if(!io.OpenDevice(USB_VID, USB_PID))
-    {
-        printf("Can't Open HID Device\n");
-        goto lexit;
-    }
-    else
-    {
-        isDeviceOpened = TRUE;
-        printf("USB HID Device VID[%04x] PID[%04x] Open Success.\n", USB_VID, USB_PID);
-        printf(">>> Erase sectors: %d - %d\n", startSector, startSector + sectors - 1);
-
-        cmd.cmd = HID_CMD_ERASE;
-        cmd.len = sizeof(cmd) - 4; /* Not include checksum */
-        cmd.arg1 = startSector;
-        cmd.arg2 = sectors;
-        cmd.signature = HID_CMD_SIGNATURE;
-        cmd.checksum = CalCheckSum((unsigned char *)&cmd, cmd.len);
-
-        bRet = io.WriteFile((unsigned char *)&cmd, sizeof(cmd), &length, USB_TIME_OUT);
-        if(!bRet)
-        {
-            printf("ERROR: Send erase command error!\n");
-            goto lexit;
-        }
-        eraseCnt = sectors;
-    }
-
-
-lexit:
-
-    if(isDeviceOpened)
-        io.CloseDevice();
-
-    return eraseCnt;
-}
-
-
-/*
-    This function is used to program data to target device through USB HID.
-
-    pWriteBuf- [in ] The buffer of programming data. User must make sure its size is enough.
-    startPage- [out] The start page to program SPI Flash. The page size should be dependent on SPI Flash.
-    pages    - [out] The number of pages to program.
-
-    return value is the total programming bytes.
-*/
-int WritePages(unsigned char *pWriteBuf, unsigned int startPage, unsigned int pages)
-{
-    CHidCmd io;
-    CMD_T cmd;
-    unsigned long length;
-    BOOL bRet;
-    unsigned long writeBytes;
-    bool isDeviceOpened;
-
-    writeBytes = 0;
-    isDeviceOpened = 0;
-    if(!io.OpenDevice(USB_VID, USB_PID))
-    {
-        printf("Can't Open HID Device\n");
-        goto lexit;
-    }
-    else
-    {
-        isDeviceOpened = TRUE;
-        printf("USB HID Device VID[%04x] PID[%04x] Open Success.\n", USB_VID, USB_PID);
-        printf(">>> Write pages: %d - %d\n", startPage, startPage + pages - 1);
-
-        cmd.cmd = HID_CMD_WRITE;
-        cmd.len = sizeof(cmd) - 4; /* Not include checksum */
-        cmd.arg1 = startPage;
-        cmd.arg2 = pages;
-        cmd.signature = HID_CMD_SIGNATURE;
-        cmd.checksum = CalCheckSum((unsigned char *)&cmd, cmd.len);
-
-        bRet = io.WriteFile((unsigned char *)&cmd, sizeof(cmd), &length, USB_TIME_OUT);
-        if(!bRet)
-        {
-            printf("ERROR: Send read command error!\n");
-            goto lexit;
-        }
-
-        while(1)
-        {
-            if(writeBytes >= cmd.arg2 * PAGE_SIZE)
-            {
-                break;
-            }
-
-            bRet = io.WriteFile(pWriteBuf + writeBytes, HID_PACKET_SIZE, &length, USB_TIME_OUT);
-            if(!bRet)
-            {
-                printf("ERROR: Write fail!\n");
-                goto lexit;
-            }
-            writeBytes += length;
-        }
-
-    }
-
-
-lexit:
-
-    if(isDeviceOpened)
-        io.CloseDevice();
-
-    return writeBytes;
-}
-
-/*
-    This function is used to be an simple demo of send command. User may use it as an example to add new command.
-*/
-int SendTestCmd(void)
-{
-    CHidCmd io;
-    CMD_T cmd;
-    unsigned long length;
-    BOOL bRet;
-    bool isDeviceOpened;
+    BusyIndicator_t led_output_report;
+    memset(&led_output_report, 0, sizeof(BusyIndicator_t));
 
 
     isDeviceOpened = 0;
@@ -328,14 +120,11 @@ int SendTestCmd(void)
         printf("USB HID Device VID[%04x] PID[%04x] Open Success.\n", USB_VID, USB_PID);
         printf(">>> Test command\n");
 
-        cmd.cmd = HID_CMD_TEST;
-        cmd.len = sizeof(cmd) - 4; /* Not include checksum */
-        cmd.arg1 = 0x12345678;
-        cmd.arg2 = 0xabcdef01;
-        cmd.signature = HID_CMD_SIGNATURE;
-        cmd.checksum = CalCheckSum((unsigned char *)&cmd, cmd.len);
+        led_output_report.mode = command;
+        led_output_report.blue_pwm_l = value;
 
-        bRet = io.WriteFile((unsigned char *)&cmd, sizeof(cmd), &length, USB_TIME_OUT);
+
+        bRet = io.WriteFile((unsigned char *)&led_output_report, sizeof(led_output_report), &length, USB_TIME_OUT);
         if(!bRet)
         {
             printf("ERROR: Send test command error!\n");
@@ -344,56 +133,7 @@ int SendTestCmd(void)
     }
 
 
-lexit:
-
-    if(isDeviceOpened)
-        io.CloseDevice();
-
-    return 0;
-}
-
-
-#define TEST_PAGES   4       /* 4 pages */
-#define TEST_BASE    0x10000    /* 64kbytes */
-
-int SendLedCmd(unsigned char command, unsigned int value)
-{
-    CHidCmd io;
-    CMD_T cmd;
-    unsigned long length;
-    BOOL bRet;
-    bool isDeviceOpened;
-
-
-    isDeviceOpened = 0;
-    if(!io.OpenDevice(USB_VID, USB_PID))
-    {
-        printf("Can't Open HID Device\n");
-        goto lexit;
-    }
-    else
-    {
-        isDeviceOpened = TRUE;
-        printf("USB HID Device VID[%04x] PID[%04x] Open Success.\n", USB_VID, USB_PID);
-        printf(">>> Test command\n");
-
-        cmd.cmd = command;
-        cmd.len = sizeof(cmd) - 4; /* Not include checksum */
-        cmd.arg1 = value;
-        cmd.arg2 = 0;
-        cmd.signature = HID_CMD_SIGNATURE;
-        cmd.checksum = CalCheckSum((unsigned char *)&cmd, cmd.len);
-
-        bRet = io.WriteFile((unsigned char *)&cmd, sizeof(cmd), &length, USB_TIME_OUT);
-        if(!bRet)
-        {
-            printf("ERROR: Send test command error!\n");
-            goto lexit;
-        }
-    }
-
-
-lexit:
+    lexit:
 
     if(isDeviceOpened)
         io.CloseDevice();
@@ -403,147 +143,64 @@ lexit:
 
 int main(void)
 {
-#if 1
-	char ch[20];
-	unsigned int cmd, value;
+    char ch[20];
+    unsigned int cmd, value;
 
     do
     {
-		memset(ch, '\0' ,sizeof(ch));
+        memset(ch, '\0' ,sizeof(ch));
         printf("please enter cmd and value, q for quit \n");
-    
-        gets(ch);
 
+        gets(ch);
         //printf("you enter %s\n", ch);   // getchar()
 
-		if ( ch[0] == 'q' )
-			break;    
-		else if ( ch[2] != '\0')
-		{
+        if( ch[0] == 'q' )
+            break;
+        else if( ch[2] != '\0')
+        {
             sscanf(ch, "%d %d", &cmd, &value);
-			printf("you enter cmd:%d and value:%d\n", cmd, value); 
-            value = value & 0xFF;
-		}
-		else
-		{
-			sscanf(ch, "%d", &cmd);
-			printf("you enter cmd:%d \n", cmd); 
+            printf("you enter cmd:%d and value:%d\n", cmd, value); 
+            value &= 0xFF;
+        }
+        else
+        {
+            sscanf(ch, "%d", &cmd);
+            printf("you enter cmd:%d \n", cmd); 
             value = 0;
-		}
+        }
 
         switch(cmd)
         {
-        case 0:
-            SendLedCmd(HID_CMD_LED_OFF, value);
-            break;
         case 1:
-            SendLedCmd(HID_CMD_LED_ON, value);
+            SendLedCmd(LED_ON, value);
             break;
         case 2:
-            SendLedCmd(HID_CMD_LED_PWM_DUTY, value);
+            SendLedCmd(LED_FLASH, value);
             break;
         case 3:
-            SendLedCmd(HID_CMD_LED_FLASH, value);
+            SendLedCmd(LED_SLOW_BLINK, value);
             break;
         case 4:
-            SendLedCmd(HID_CMD_LED_SLOW_BLINK, value);
+            SendLedCmd(LED_FAST_BLINK, value);
             break;
         case 5:
-            SendLedCmd(HID_CMD_LED_BREATH, value);
+            SendLedCmd(LED_OFF, value);
+            break;
+        case 6:
+            SendLedCmd(LED_BREATH, value);
+            break;
+        case 7:
+            SendLedCmd(LED_UPDATE_PARAMETER, value);  // set duty
             break;
         default:
+            printf("unknow cmd:%d \n", cmd); 
             break;
         }
-        
-
-     } while( 1 );
-
-#else
-    int i;
-    int isErr;
-    unsigned char buf[TEST_PAGES * PAGE_SIZE];
 
 
-    /* Erase test space */
-    EraseSectors(TEST_BASE / SECTOR_SIZE, (TEST_PAGES * PAGE_SIZE) / SECTOR_SIZE);
-
-    /* Blank check */
-    ReadPages(buf, TEST_BASE / PAGE_SIZE, TEST_PAGES);
-    isErr = 0;
-    for(i = 0; i < TEST_PAGES * PAGE_SIZE; i++)
-    {
-        if(buf[i] != (unsigned char)0xFF)
-        {
-            isErr = 1;
-            break;
-        }
-    }
-
-    if(isErr)
-    {
-        printf("ERROR: Blank test fail!\n");
-        return -1;
-    }
-
-    for(i = 0; i < TEST_PAGES * PAGE_SIZE; i++)
-        buf[i] = i & 0xFF;
-    /* Write test data */
-    WritePages(buf, TEST_BASE / PAGE_SIZE, TEST_PAGES);
-
-    /* Clean the buffer */
-    memset(buf, 0xCC, TEST_PAGES * PAGE_SIZE);
-
-    /* Test the write data */
-    ReadPages(buf, TEST_BASE / PAGE_SIZE, TEST_PAGES);
-    isErr = 0;
-    for(i = 0; i < TEST_PAGES * PAGE_SIZE; i++)
-    {
-        if(buf[i] != (i & 0xFF))
-        {
-            isErr = 1;
-            break;
-        }
-    }
-
-    if(isErr)
-    {
-        printf("ERROR: Programming test fail!\n");
-        return -1;
-    }
-
-    /* Single sector erase test */
-    EraseSectors(TEST_BASE / SECTOR_SIZE + 1, 1);
-
-    /* Clean the buffer */
-    memset(buf, 0xCC, TEST_PAGES * PAGE_SIZE);
-    ReadPages(buf, TEST_BASE / PAGE_SIZE, TEST_PAGES);
-    isErr = 0;
-    for(i = 0; i < SECTOR_SIZE; i++)
-    {
-        if(buf[i] != (i & 0xFF))
-        {
-            isErr = 1;
-            break;
-        }
-    }
-    for(i = SECTOR_SIZE; i < SECTOR_SIZE * 2; i++)
-    {
-        if(buf[i] != (unsigned char)0xFF)
-        {
-            isErr = 1;
-            break;
-        }
-    }
-
-    if(isErr)
-    {
-        printf("ERROR: Single sector erase test fail!\n");
-        return -1;
-    }
+    } while( 1 );
 
 
-    printf("HID Transfer test ok!\n");
-#endif
     return 0;
 
 

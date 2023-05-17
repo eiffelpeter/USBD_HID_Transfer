@@ -2,6 +2,7 @@
 #include <wchar.h> // wchar_t
 #include <stdlib.h>
 #include <hidapi/hidapi.h>
+#include <string.h>
 
 #pragma pack(1)
 
@@ -9,25 +10,32 @@
 #define USB_PID 0x5678
 #define MAX_STR 255
 
-#define HID_CMD_SIGNATURE   0x43444948
+typedef enum LedMode_e {
+    LED_DO_NOT_CHANGE,
+    LED_ON,
+    LED_FLASH,
+    LED_SLOW_BLINK,
+    LED_FAST_BLINK,
+    LED_OFF,
+    LED_BREATH,
+    LED_UPDATE_PARAMETER
+} LedMode;
 
-/* HID Transfer Commands */
-#define HID_CMD_LED_ON          0x3D
-#define HID_CMD_LED_OFF         0x41
-#define HID_CMD_LED_FLASH       0x3E
-#define HID_CMD_LED_SLOW_BLINK  0x3F
-#define HID_CMD_LED_BREATH      0x42
-#define HID_CMD_LED_PWM_DUTY    0x43
-
-typedef struct
+typedef struct BusyIndicatorDef_t
 {
-    unsigned char cmd;
-    unsigned char len;
-    unsigned int arg1;
-    unsigned int arg2;
-    unsigned int signature;
-    unsigned int checksum;
-} CMD_T;
+    unsigned char mode;
+    unsigned char red_pwm_l;
+    unsigned char red_pwm_h;
+    unsigned char green_pwm_l;
+    unsigned char green_pwm_h;
+    unsigned char blue_pwm_l;
+    unsigned char blue_pwm_h;
+    unsigned char flash_on_time;
+    unsigned char slow_blink_on_time;
+    unsigned char slow_blink_off_time;
+    unsigned char fast_blink_on_time;
+    unsigned char fast_blink_off_time;
+} BusyIndicator_t;
 
 unsigned int CalCheckSum(unsigned char *buf, unsigned int size)
 {
@@ -45,19 +53,17 @@ unsigned int CalCheckSum(unsigned char *buf, unsigned int size)
 
 }
 
-int SendLedCmd(hid_device *handle, unsigned char command, unsigned int value)
+int SendLedCmd(hid_device *handle, unsigned char command, unsigned char value)
 {
     int res;
-    CMD_T cmd;
 
-    cmd.cmd = command;
-    cmd.len = (sizeof(cmd) - 4); /* Not include checksum */
-    cmd.arg1 = value;
-    cmd.arg2 = 0;
-    cmd.signature = HID_CMD_SIGNATURE;
-    cmd.checksum = CalCheckSum((unsigned char *)&cmd, cmd.len);
+    BusyIndicator_t led_output_report;
+    memset(&led_output_report, 0, sizeof(BusyIndicator_t));
 
-    res = hid_write(handle, (unsigned char *)&cmd, sizeof(cmd));
+    led_output_report.mode = command;
+    led_output_report.blue_pwm_l = value;
+
+    res = hid_write(handle, (unsigned char *)&led_output_report, sizeof(led_output_report));
 
     return res;
 }
@@ -69,6 +75,22 @@ int main(int argc, char* argv[])
     wchar_t wstr[MAX_STR];
     hid_device *handle;
     int i;
+    unsigned int cmd = 0, value = 0;
+
+    if(argc == 2)
+    {
+        cmd = atoi(argv[1]);
+    }
+    else if(argc == 3)
+    {
+        cmd = atoi(argv[1]);
+        value = atoi(argv[2]);
+        value &= 0xFF;
+    }
+    else
+    {
+        return 1;
+    }
 
     // Initialize the hidapi library
     res = hid_init();
@@ -99,48 +121,34 @@ int main(int argc, char* argv[])
     res = hid_get_indexed_string(handle, 1, wstr, MAX_STR);
     printf("Indexed String 1: %ls\n", wstr);
 
-    unsigned int cmd = 0, value = 0;
-
-    if(argc == 2)
-    {
-        cmd = atoi(argv[1]);
-    }
-    else if(argc == 3)
-    {
-        cmd = atoi(argv[1]);
-        value = atoi(argv[2]);
-    }
-    else
-    {
-        goto end;
-    }
-
-
     switch(cmd)
     {
-    case 0:
-        SendLedCmd(handle, HID_CMD_LED_OFF, value);
-        break;
     case 1:
-        SendLedCmd(handle, HID_CMD_LED_ON, value);
+        SendLedCmd(handle, LED_ON, value);
         break;
     case 2:
-        SendLedCmd(handle, HID_CMD_LED_PWM_DUTY, value);
+        SendLedCmd(handle, LED_FLASH, value);
         break;
     case 3:
-        SendLedCmd(handle, HID_CMD_LED_FLASH, value);
+        SendLedCmd(handle, LED_SLOW_BLINK, value);
         break;
     case 4:
-        SendLedCmd(handle, HID_CMD_LED_SLOW_BLINK, value);
+        SendLedCmd(handle, LED_FAST_BLINK, value);
         break;
     case 5:
-        SendLedCmd(handle, HID_CMD_LED_BREATH, value);
+        SendLedCmd(handle, LED_OFF, value);
+        break;
+    case 6:
+        SendLedCmd(handle, LED_BREATH, value);
+        break;
+    case 7:
+        SendLedCmd(handle, LED_UPDATE_PARAMETER, value);  // set duty
         break;
     default:
+        printf("unknow cmd:%d \n", cmd); 
         break;
     }
 
-end:
     // Close the device
     hid_close(handle);
 

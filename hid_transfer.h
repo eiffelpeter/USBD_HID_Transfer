@@ -11,6 +11,9 @@
  *****************************************************************************/
 #ifndef __USBD_HID_H__
 #define __USBD_HID_H__
+#include <stdio.h>
+#include <string.h>
+#include "NuMicro.h"
 
 /* Define the vendor id and product id */
 #define USBD_VID        0x1234
@@ -64,6 +67,32 @@
 
 #define LEN_CONFIG_AND_SUBORDINATE      (LEN_CONFIG+LEN_INTERFACE+LEN_HID+LEN_ENDPOINT)
 
+typedef enum LedMode_e {
+    LED_DO_NOT_CHANGE,
+    LED_ON,
+    LED_FLASH,
+    LED_SLOW_BLINK,
+    LED_FAST_BLINK,
+    LED_OFF,    
+    LED_BREATH,
+    LED_UPDATE_PARAMETER
+} LedMode;
+
+typedef struct BusyIndicatorDef_t
+{
+    uint8_t mode;
+    uint8_t red_pwm_l;
+    uint8_t red_pwm_h;
+    uint8_t green_pwm_l;
+    uint8_t green_pwm_h;
+    uint8_t blue_pwm_l;
+    uint8_t blue_pwm_h;
+    uint8_t flash_on_time;
+    uint8_t slow_blink_on_time;
+    uint8_t slow_blink_off_time;
+    uint8_t fast_blink_on_time;
+    uint8_t fast_blink_off_time;
+} BusyIndicator_t;
 
 /*-------------------------------------------------------------*/
 
