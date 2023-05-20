@@ -12,13 +12,18 @@
 /*!<Includes */
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include "NuMicro.h"
 #include "hid_transfer.h"
 #include "pwm_ctrl.h"
 
+int32_t ProcessCommand(void);
+
 uint8_t volatile g_u8EP2Ready = 0;
 uint8_t volatile g_u8Suspend = 0;
 uint8_t g_u8Idle = 0, g_u8Protocol = 0;
+static BusyIndicator_t led_output_report;
+static bool handle_ep1_output_report = false;
 
 void USBD_IRQHandler(void)
 {
@@ -113,6 +118,12 @@ void USBD_IRQHandler(void)
             USBD_CLR_INT_FLAG(USBD_INTSTS_EP1);
             /* control OUT */
             USBD_CtrlOut();
+
+            if(handle_ep1_output_report)
+            {
+                ProcessCommand();
+                handle_ep1_output_report = false;
+            }
         }
 
         if(u32IntSts & USBD_INTSTS_EP2)
@@ -257,13 +268,39 @@ void HID_ClassRequest(void)
         /* Host to device */
         switch(buf[1])
         {
-        case SET_REPORT:
+        case SET_REPORT:  // 0x09
             {
+                printf("Host to device SET_REPORT %02x %02x %02x %02x %02x %02x %02x %02x  \n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]); 
                 if(buf[3] == 3)
                 {
                     /* Request Type = Feature */
                     USBD_SET_DATA1(EP1);
                     USBD_SET_PAYLOAD_LEN(EP1, 0);
+                }
+                else if(buf[3] == 2)    /* report type output */
+                {
+                    //printf("report id 0x%x, report length 0x%x \n", buf[2], (buf[7] << 8) | buf[6]);
+                    if(LED_REPORT_ID == buf[2])
+                    {
+                        printf("match report id 0x%x, report length 0x%x \n", buf[2], (buf[7] << 8) | buf[6]);
+                        USBD_PrepareCtrlOut((uint8_t *)&led_output_report, sizeof(led_output_report));
+                        handle_ep1_output_report = true;
+                    }
+                    else
+                    {
+                        printf("dismatch report id 0x%x, expect:0x%x\n", buf[2], LED_REPORT_ID );
+                    }
+
+                    /* Request Type = Output */
+                    USBD_SET_DATA1(EP1);
+                    USBD_SET_PAYLOAD_LEN(EP1, buf[6]);
+
+                    /* Status stage */
+                    USBD_PrepareCtrlIn(0, 0);
+                }
+                else
+                {
+                    printf("Host to device SET_REPORT buf[3]:%d\n", buf[3]);
                 }
                 break;
             }
@@ -296,7 +333,6 @@ void HID_ClassRequest(void)
 }
 
 /***************************************************************/
-BusyIndicator_t led_output_report;
 
 uint32_t CalCheckSum(uint8_t *buf, uint32_t size)
 {
@@ -314,12 +350,20 @@ uint32_t CalCheckSum(uint8_t *buf, uint32_t size)
 
 }
 
-
-int32_t ProcessCommand(uint8_t *pu8Buffer, uint32_t u32BufferLen)
+int32_t ProcessCommand(void)
 {
     int i = 0;
 
-    USBD_MemCopy((uint8_t *)&led_output_report, pu8Buffer, u32BufferLen);
+    for(i=0 ; i<sizeof(led_output_report) ; i++)
+    {
+        printf("%02X ", (unsigned int) ((char*)&led_output_report)[i]);
+
+        if(i%16 == 15)
+        {
+            printf("\n");
+        }
+    }
+    printf("\n");
 
     switch(led_output_report.mode)
     {
@@ -368,13 +412,11 @@ int32_t ProcessCommand(uint8_t *pu8Buffer, uint32_t u32BufferLen)
     return 0;
 }
 
-
 void HID_GetOutReport(uint8_t *pu8EpBuf, uint32_t u32Size)
 {
-
-
     /* Check and process the command packet */
-    if(ProcessCommand(pu8EpBuf, u32Size))
+    USBD_MemCopy((uint8_t *)&led_output_report, pu8EpBuf, u32Size);
+    if(ProcessCommand())
     {
         printf("Unknown HID command!\n");
     }

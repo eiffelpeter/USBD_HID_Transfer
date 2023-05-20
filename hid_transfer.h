@@ -67,6 +67,8 @@
 
 #define LEN_CONFIG_AND_SUBORDINATE      (LEN_CONFIG+LEN_INTERFACE+LEN_HID+LEN_ENDPOINT)
 
+#define LED_REPORT_ID        0x01
+
 typedef enum LedMode_e {
     LED_DO_NOT_CHANGE,
     LED_ON,
