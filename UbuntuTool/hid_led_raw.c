@@ -93,6 +93,7 @@ int main(int argc, char* argv[])
     }
     else
     {
+        printf("please reset mcu and find /dev/hidrawX, execute (./hid_led_raw X 1) to turn on LED \n");
         return 1;
     }
 
