@@ -82,6 +82,7 @@ typedef enum LedMode_e {
 
 typedef struct BusyIndicatorDef_t
 {
+    uint8_t report_id;
     uint8_t mode;
     uint8_t red_pwm_l;
     uint8_t red_pwm_h;

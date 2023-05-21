@@ -10,6 +10,8 @@
 #define USB_PID 0x5678
 #define MAX_STR 255
 
+#define LED_REPORT_ID        0x01
+
 typedef enum LedMode_e {
     LED_DO_NOT_CHANGE,
     LED_ON,
@@ -23,6 +25,7 @@ typedef enum LedMode_e {
 
 typedef struct BusyIndicatorDef_t
 {
+    unsigned char report_id;
     unsigned char mode;
     unsigned char red_pwm_l;
     unsigned char red_pwm_h;
@@ -60,6 +63,7 @@ int SendLedCmd(hid_device *handle, unsigned char command, unsigned char value)
     BusyIndicator_t led_output_report;
     memset(&led_output_report, 0, sizeof(BusyIndicator_t));
 
+    led_output_report.report_id = LED_REPORT_ID;
     led_output_report.mode = command;
     led_output_report.blue_pwm_l = value;
 

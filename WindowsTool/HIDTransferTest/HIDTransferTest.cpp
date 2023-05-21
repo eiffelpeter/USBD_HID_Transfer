@@ -13,7 +13,7 @@
 
 #define USB_VID         0x1234  /* Vendor ID */
 #define USB_PID         0x5678  /* Product ID */
-
+#define LED_REPORT_ID   0x01
 
 #define USB_TIME_OUT    100
 
@@ -66,6 +66,7 @@ typedef enum LedMode_e
 
 typedef struct BusyIndicatorDef_t
 {
+    unsigned char report_id;
     unsigned char mode;
     unsigned char red_pwm_l;
     unsigned char red_pwm_h;
@@ -120,9 +121,9 @@ int SendLedCmd(unsigned char command, unsigned char value)
         printf("USB HID Device VID[%04x] PID[%04x] Open Success.\n", USB_VID, USB_PID);
         printf(">>> Test command\n");
 
+        led_output_report.report_id = LED_REPORT_ID;
         led_output_report.mode = command;
         led_output_report.blue_pwm_l = value;
-
 
         bRet = io.WriteFile((unsigned char *)&led_output_report, sizeof(led_output_report), &length, USB_TIME_OUT);
         if(!bRet)

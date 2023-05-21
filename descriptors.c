@@ -24,6 +24,7 @@ uint8_t HID_DeviceReportDescriptor[] =
     0x09, 0x4b,                    //   USAGE (Generic Indicator)
     0xa1, 0x02,                    //   COLLECTION (Logical)
 
+    0x85, LED_REPORT_ID,   //    REPORT_ID (1)
     // output report: 3-bit LED mode
     0x05, 0x08,                    //     USAGE_PAGE (LEDs)
     0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
@@ -89,7 +90,6 @@ uint8_t HID_DeviceReportDescriptor[] =
     0xC0                // End Collection
 #endif
 };
-
 
 /*----------------------------------------------------------------------------*/
 /*!<USB Device Descriptor */

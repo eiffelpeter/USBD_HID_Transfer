@@ -286,6 +286,13 @@ void HID_ClassRequest(void)
                         USBD_PrepareCtrlOut((uint8_t *)&led_output_report, sizeof(led_output_report));
                         handle_ep1_output_report = true;
                     }
+                    else if( 0 == buf[2] )
+                    {
+                        printf("report id is zero\n");
+                        led_output_report.report_id = 0;
+                        USBD_PrepareCtrlOut((uint8_t *)&led_output_report.mode, sizeof(led_output_report)-1);
+                        handle_ep1_output_report = true;
+                    }
                     else
                     {
                         printf("dismatch report id 0x%x, expect:0x%x\n", buf[2], LED_REPORT_ID );
@@ -352,9 +359,12 @@ uint32_t CalCheckSum(uint8_t *buf, uint32_t size)
 
 int32_t ProcessCommand(void)
 {
-    int i = 0;
+    int i, index;
 
-    for(i=0 ; i<sizeof(led_output_report) ; i++)
+    // printf for debug
+    index = (led_output_report.report_id == 0 ) ? 1 : 0;
+
+    for(i=index ; i<sizeof(led_output_report) ; i++)
     {
         printf("%02X ", (unsigned int) ((char*)&led_output_report)[i]);
 
@@ -393,6 +403,7 @@ int32_t ProcessCommand(void)
         }
         case LED_BREATH:
         {
+            printf("LED_BREATH\n");
             PWM_Set_Status_Led(STATUS_LED_BLUE_BREATH);
             break;
         }
