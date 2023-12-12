@@ -12,8 +12,8 @@
 # Open project file to build MCU
 Open `USBD_HID_Transfer.uvprojx` by Keil.
 
-# Demo on windows
+# Demo LED control on windows
 [![IMAGE ALT TEXT HERE](./doc/video_thumb.JPG)](https://drive.google.com/file/d/13615Q7CeB1TMKUCQqMDKom04Chpnj5Rs/view?usp=share_link)
 
-# Demo on ubuntu
+# Demo LED control on ubuntu
 [![IMAGE ALT TEXT HERE](./doc/video_thumb_ubuntu.JPG)](https://drive.google.com/file/d/15-3wC8NVgHzmHhz1gX1DBhFeq5Bs-rCZ/view?usp=share_link)
